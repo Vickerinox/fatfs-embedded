@@ -18,7 +18,7 @@
 /
 /----------------------------------------------------------------------------*/
 
-
+char *strchr(const char *s, int c);
 #ifndef FF_DEFINED
 #define FF_DEFINED	80286	/* Revision ID */
 

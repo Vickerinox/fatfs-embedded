@@ -24,6 +24,8 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 
 
+char *strchr(const char *s, int c);
+
 /*--------------------------------------------------------------------------
 
    Module Private Definitions

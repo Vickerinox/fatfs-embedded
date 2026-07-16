@@ -814,7 +814,7 @@ pub unsafe extern "C" fn ff_oem2uni(oem: u32, cp: u16) -> u32 {
         0
     }
 }
-
+ 
 #[no_mangle]
 pub unsafe extern "C" fn ff_wtoupper(mut uni: u32) -> u32 {
     const CVT1: &[u16] = &[

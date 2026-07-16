@@ -4,8 +4,7 @@ use std::path::PathBuf;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = cc::Build::new();
     let builder = builder
-        .file("fatfs/source/ff.c")
-        .file("fatfs/source/ffunicode.c");
+        .file("fatfs/source/ff.c");
         
     builder.compile("fatfs");
 

@@ -24,7 +24,14 @@
 #include "diskio.h"		/* Declarations of device I/O functions */
 
 
-char *strchr(const char *s, int c);
+char *strchr(const char *s, int c) {
+    while (*s != (char) c) {
+        if (!*s++) {
+            return NULL;
+        }
+    }
+    return (char *)s;
+}
 
 /*--------------------------------------------------------------------------
 

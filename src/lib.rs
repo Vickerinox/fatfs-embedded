@@ -731,63 +731,6 @@ pub fn truncate(file: &mut File) -> Result<(), Error> {
         Err(Error::from(result))
     }
 }
-
-/// A hacked directory opened as a file
-#[cfg(feature = "hacked_dirs")]
-pub struct HackedDir(Option<File>);
-
-#[cfg(feature = "hacked_dirs")]
-pub unsafe fn open_dir_as_file(path: &mut alloc::string::String) -> Result<HackedDir, Error> {
-    let dir = opendir(path)?;
-    let hack = File {
-        obj: FFOBJID { 
-            fs: dir.obj.fs, 
-            id: dir.obj.id, 
-            attr: dir.obj.attr & !16, 
-            stat: dir.obj.stat, 
-            sclust: dir.obj.sclust, 
-            objsize: 0xFFFFFFFF, 
-            lockid: dir.obj.lockid, 
-        },
-        flag: 1,
-        err: 0,
-        fptr: 0,
-        clust: 0,
-        sect: 0,
-        dir_sect: 0,
-        dir_ptr: core::ptr::null_mut(),
-        cltbl: core::ptr::null_mut(),
-        buf: [0; _],
-    };
-    Ok(HackedDir(Some(hack)))
-}
-
-#[cfg(feature = "hacked_dirs")]
-pub unsafe fn switch_dir(dir: &mut HackedDir, new_sector: u32) {
-    if let Some(file) = &mut dir.0 {
-        file.obj.sclust = new_sector;
-        file.clust = new_sector;
-        file.fptr = 0;
-        file.sect = 0;
-        file.obj.objsize = 0xFFFFFFFF;
-        file.buf = [0; _];
-    }
-}
-#[cfg(feature = "hacked_dirs")]
-impl Drop for HackedDir {
-    fn drop(&mut self) {
-        core::mem::forget(self.0.take());
-    }
-}
-#[cfg(feature = "hacked_dirs")]
-pub unsafe fn read_hacked_dir(dir: &mut HackedDir, buffer: &mut [u8]) -> Result<u32, Error> {
-    if let Some(file) = &mut dir.0 {
-        read(file, buffer)
-    } else {
-        Err(Error::InvalidObject)
-    }
-}
-
 /// Gets information about items within the given directory.
 /// Each call to this function returns the next item in sequence, until a null string is returned.
 pub fn readdir(dir: &mut Directory) -> Result<FileInfo, Error> {

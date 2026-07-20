@@ -22,7 +22,6 @@ cty = "0.2.2"
 [features]
 default = ["chrono"]
 chrono = ["dep:chrono"]
-hacked_dirs = []
 
 [target.'cfg(not(target_os = "none"))'.dependencies]
 chrono = { version = "0.4.3", optional = true }

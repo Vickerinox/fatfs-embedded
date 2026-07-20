@@ -743,7 +743,7 @@ pub unsafe fn open_dir_as_file(path: &mut alloc::string::String) -> Result<Hacke
         obj: FFOBJID { 
             fs: dir.obj.fs, 
             id: dir.obj.id, 
-            attr: dir.obj.attr, 
+            attr: dir.obj.attr & !16, 
             stat: dir.obj.stat, 
             sclust: dir.obj.sclust, 
             objsize: 0xFFFFFFFF, 

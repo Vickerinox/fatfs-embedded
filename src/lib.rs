@@ -746,7 +746,7 @@ pub unsafe fn open_dir_as_file(path: &mut alloc::string::String) -> Result<Hacke
             attr: dir.obj.attr, 
             stat: dir.obj.stat, 
             sclust: dir.obj.sclust, 
-            objsize: dir.obj.objsize, 
+            objsize: 0xFFFFFFFF, 
             lockid: dir.obj.lockid, 
         },
         flag: 0,
@@ -760,6 +760,18 @@ pub unsafe fn open_dir_as_file(path: &mut alloc::string::String) -> Result<Hacke
         buf: [0; _],
     };
     Ok(HackedDir(Some(hack)))
+}
+
+#[cfg(feature = "hacked_dirs")]
+pub unsafe fn switch_dir(dir: &mut HackedDir, new_sector: u32) {
+    if let Some(file) = &mut dir.0 {
+        file.obj.sclust = new_sector;
+        file.clust = new_sector;
+        file.fptr = 0;
+        file.sect = 0;
+        file.obj.objsize = 0xFFFFFFFF;
+        file.buf = [0; _];
+    }
 }
 #[cfg(feature = "hacked_dirs")]
 impl Drop for HackedDir {

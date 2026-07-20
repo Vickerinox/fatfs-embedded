@@ -749,7 +749,7 @@ pub unsafe fn open_dir_as_file(path: &mut alloc::string::String) -> Result<Hacke
             objsize: 0xFFFFFFFF, 
             lockid: dir.obj.lockid, 
         },
-        flag: 0,
+        flag: 1,
         err: 0,
         fptr: 0,
         clust: 0,

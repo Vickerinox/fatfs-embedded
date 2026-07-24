@@ -20,9 +20,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Couldn't write bindings!");
 
     let mut builder = cc::Build::new();
-    builder
+    
+    // My host machine keeps f'ing this up, so lets try this instead.
+    // This tries building with whatever cc picks
+    let build_result = builder
         .file("fatfs/source/ff.c")
-        .compile("fatfs");
+        .try_compile("fatfs");
+
+    // If it fails, use the expected arm embedded compiler instead.
+    if build_result.is_err() {
+        builder
+            .file("fatfs/source/ff.c")
+            .compiler("arm-none-eabi-gcc")
+            .compile("fatfs");
+    }
 
     Ok(())
 }

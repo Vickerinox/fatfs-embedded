@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = cc::Build::new();
     let builder = builder
         .file("fatfs/source/ff.c")
-        .compiler("gcc-arm-none-eabi");
+        .compiler("arm-none-eabi-gcc");
         
     builder.compile("fatfs");
 

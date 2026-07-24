@@ -2,13 +2,7 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = cc::Build::new();
-    let builder = builder
-        .file("fatfs/source/ff.c")
-        .compiler("arm-none-eabi-gcc");
-        
-    builder.compile("fatfs");
-
+    
     let target = env::var("TARGET")?;
 
     let bindings = bindgen::Builder::default()
@@ -24,6 +18,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+
+    let mut builder = cc::Build::new();
+    builder
+        .file("fatfs/source/ff.c")
+        .compile("fatfs");
 
     Ok(())
 }

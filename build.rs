@@ -35,6 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // If default build fails, use the expected arm embedded compiler instead.
     // (which is what the build program for astronaut expects.)
     if build_result.is_err() {
+        println!("COMPILATION FAILED, ERROR: {build_result:?}");
         builder
             .file("fatfs/source/ff.c")
             .compiler("arm-none-eabi-gcc")

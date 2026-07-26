@@ -731,6 +731,17 @@ pub fn truncate(file: &mut File) -> Result<(), Error> {
         Err(Error::from(result))
     }
 }
+
+pub fn chmod(path: &mut alloc::string::String, attributes: FileAttributes, mask: FileAttributes) -> Result<(), Error> {
+    path.push('\0');
+    let result = unsafe { f_chmod(path.as_ptr().cast(), attributes.as_u8(), mask.as_u8()) };
+    path.pop();
+    if result == FRESULT_FR_OK {
+        Ok(())
+    } else {
+        Err(Error::from(result))
+    }
+}
 /// Gets information about items within the given directory.
 /// Each call to this function returns the next item in sequence, until a null string is returned.
 pub fn readdir(dir: &mut Directory) -> Result<FileInfo, Error> {

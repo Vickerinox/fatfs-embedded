@@ -32,15 +32,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .file("fatfs/source/ff.c")
         .try_compile("fatfs");
 
-    // If default build fails, use the expected arm embedded compiler instead.
+    // If default build fails, use the expected arm embedded compiler instead since thats more often than not the problem.
     // (which is what the build program for astronaut expects.)
-    if build_result.is_err() {
-        println!("COMPILATION FAILED, ERROR: {build_result:?}");
-        builder
-            .file("fatfs/source/ff.c")
-            .compiler("arm-none-eabi-gcc")
-            .compile("fatfs");
+    if let Err(error) = build_result {
+        if error.to_string().contains("command did not execute successfully (status code exit status: 1)") {
+            builder
+                .file("fatfs/source/ff.c")
+                .compiler("arm-none-eabi-gcc")
+                .compile("fatfs");
+        } else {
+            panic!("Failed compiling fatfs bindings: {}", error);
+        }
     }
+    
 
     Ok(())
 }

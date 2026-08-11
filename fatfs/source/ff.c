@@ -23,7 +23,7 @@
 #include "ff.h"			/* Declarations of FatFs API */
 #include "diskio.h"		/* Declarations of device I/O functions */
 
-
+#define strchr my_strchr_func
 char* strchr (register const char *s, int c)
 {
   do {

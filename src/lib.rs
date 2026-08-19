@@ -710,6 +710,19 @@ pub fn write(file: &mut File, buffer: &[u8]) -> Result<u32, Error> {
         Err(Error::from(result))
     }
 }
+/// Create a directory at the specified path.
+pub fn mkdir(path: &str) -> Result<(), Error> {
+    let result;
+    unsafe {
+        result = f_mkdir(path.as_ptr().cast());
+    }
+    if result == FRESULT_FR_OK {
+        return Ok(());
+    } else {
+        return Err(Error::try_from(result).unwrap());
+    }
+}
+
 /// Closes the given directory.
 fn closedir(dir: &mut Directory) -> Result<(), Error> {
     let result;

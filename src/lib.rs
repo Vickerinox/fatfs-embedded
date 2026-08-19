@@ -29,7 +29,7 @@ pub mod fatfs {
     use crate::fatfs::inc_bindings::*;
     use alloc::string::String;
     use bitflags::bitflags;
-    use core::{ffi::CStr, ptr};
+    use core::ptr;
 
     #[cfg(feature = "chrono")]
     use chrono::{Datelike, NaiveDateTime, Timelike};
@@ -274,7 +274,7 @@ pub mod fatfs {
 
         /// Find the first item that matches the given pattern.
         /// On success a tuple is returned containing file information and the enclosing directory.
-        pub fn findfirst(&self, path: &CStr, pattern: &CStr) -> Result<(Directory, FileInfo), Error> {
+        pub fn findfirst(&self, path: &str, pattern: &str) -> Result<(Directory, FileInfo), Error> {
             let result;
             let mut info: FileInfo = Default::default();
             let mut dir: Directory = Default::default();
@@ -282,8 +282,8 @@ pub mod fatfs {
                 result = f_findfirst(
                     ptr::addr_of_mut!(dir),
                     ptr::addr_of_mut!(info),
-                    path.as_ptr(),
-                    pattern.as_ptr(),
+                    path.as_ptr().cast(),
+                    pattern.as_ptr().cast(),
                 );
             }
             if result == FRESULT_FR_OK {
@@ -308,10 +308,10 @@ pub mod fatfs {
         }
 
         /// Create a directory at the specified path.
-        pub fn mkdir(&self, path: &CStr) -> Result<(), Error> {
+        pub fn mkdir(&self, path: &str) -> Result<(), Error> {
             let result;
             unsafe {
-                result = f_mkdir(path.as_ptr());
+                result = f_mkdir(path.as_ptr().cast());
             }
             if result == FRESULT_FR_OK {
                 return Ok(());
@@ -321,10 +321,10 @@ pub mod fatfs {
         }
 
         /// Deletes a file at the specified path.
-        pub fn unlink(&self, path: &CStr) -> Result<(), Error> {
+        pub fn unlink(&self, path: &str) -> Result<(), Error> {
             let result;
             unsafe {
-                result = f_unlink(path.as_ptr());
+                result = f_unlink(path.as_ptr().cast());
             }
             if result == FRESULT_FR_OK {
                 return Ok(());
@@ -334,10 +334,10 @@ pub mod fatfs {
         }
 
         /// Renames a file at the old path to the new path.
-        pub fn rename(&self, old_path: &CStr, new_path: &CStr) -> Result<(), Error> {
+        pub fn rename(&self, old_path: &str, new_path: &str) -> Result<(), Error> {
             let result;
             unsafe {
-                result = f_rename(old_path.as_ptr(), new_path.as_ptr());
+                result = f_rename(old_path.as_ptr().cast(), new_path.as_ptr().cast());
             }
             if result == FRESULT_FR_OK {
                 return Ok(());
@@ -347,11 +347,11 @@ pub mod fatfs {
         }
 
         /// Returns information about a file at the given path.
-        pub fn stat(&self, path: &CStr) -> Result<FileInfo, Error> {
+        pub fn stat(&self, path: &str) -> Result<FileInfo, Error> {
             let result;
             let mut info: FileInfo = Default::default();
             unsafe {
-                result = f_stat(path.as_ptr(), ptr::addr_of_mut!(info));
+                result = f_stat(path.as_ptr().cast(), ptr::addr_of_mut!(info));
             }
             if result == FRESULT_FR_OK {
                 return Ok(info);
@@ -360,10 +360,27 @@ pub mod fatfs {
             }
         }
 
+        /// Applies the given attributes to the file according to the supplied mask.
+        pub fn chmod(
+            &self,
+            path: &str,
+            attr: FileAttributes,
+            mask: FileAttributes,
+        ) -> Result<(), Error> {
+            let result;
+            unsafe {
+                result = f_chmod(path.as_ptr().cast(), attr.as_u8(), mask.as_u8());
+            }
+            if result == FRESULT_FR_OK {
+                return Ok(());
+            } else {
+                return Err(Error::try_from(result).unwrap());
+            }
+        }
 
         /// Applies a timestamp to the given file.
         #[cfg(feature = "chrono")]
-        pub fn utime(&self, path: &CStr, timestamp: NaiveDateTime) -> Result<(), Error> {
+        pub fn utime(&self, path: &str, timestamp: NaiveDateTime) -> Result<(), Error> {
             let result;
             let year = timestamp.year() as u32;
             let month = timestamp.month();
@@ -375,7 +392,7 @@ pub mod fatfs {
             info.fdate = (((year - 1980) * 512) | month * 32 | day) as u16;
             info.ftime = (hour * 2048 | minute * 32 | second / 2) as u16;
             unsafe {
-                result = f_utime(path.as_ptr(), ptr::addr_of_mut!(info));
+                result = f_utime(path.as_ptr().cast(), ptr::addr_of_mut!(info));
             }
             if result == FRESULT_FR_OK {
                 return Ok(());
@@ -493,7 +510,7 @@ pub mod fatfs {
         }
 
         /// Mount the drive.
-        pub fn mount(&mut self, drive: &'static CStr) -> Result<(), Error> {
+        pub fn mount(&mut self, drive: &'static core::ffi::CStr) -> Result<(), Error> {
             self.fs = FATFS::default();
             let result;
             unsafe {
@@ -598,7 +615,7 @@ pub mod fatfs {
         }
 
         /// Unmount the drive at the supplied path.
-        pub fn unmount(&self, path: &CStr) -> Result<(), Error> {
+        pub fn unmount(&self, path: &str) -> Result<(), Error> {
             let result;
             unsafe {
                 result = f_mount(ptr::null_mut(), path.as_ptr().cast(), 0);
@@ -613,17 +630,18 @@ pub mod fatfs {
 }
 use crate::fatfs::inc_bindings::*;
 use crate::fatfs::*;
-use core::ffi::CStr;
 use core::ptr::addr_of_mut;
 extern crate alloc;
 
 /// Opens the file at the given path in the given mode. FileOption flags may be OR'd together.
 pub fn open(
-    path: &CStr,
+    path: &mut alloc::string::String,
     mode: FileOptions,
 ) -> Result<File, crate::fatfs::Error> {
     let mut file = Default::default();
+    path.push('\0');
     let result = unsafe { f_open(addr_of_mut!(file), path.as_ptr().cast(), mode.as_u8()) };
+    path.pop();
     if result == FRESULT_FR_OK {
         Ok(file)
     } else {
@@ -631,9 +649,11 @@ pub fn open(
     }
 }
 /// Opens a directory. On success, the Directory object is returned.
-pub fn opendir(path: &CStr) -> Result<Directory, Error> {
+pub fn opendir(path: &mut alloc::string::String) -> Result<Directory, Error> {
     let mut dir = Default::default();
-    let result = unsafe { f_opendir(addr_of_mut!(dir), path.as_ptr()) };
+    path.push('\0');
+    let result = unsafe { f_opendir(addr_of_mut!(dir), path.as_ptr().cast()) };
+    path.pop();
     match result {
         FRESULT_FR_OK => Ok(dir),
         error => Err(Error::from(error)),
@@ -691,7 +711,7 @@ pub fn write(file: &mut File, buffer: &[u8]) -> Result<u32, Error> {
     }
 }
 /// Create a directory at the specified path.
-pub fn mkdir(path: &CStr) -> Result<(), Error> {
+pub fn mkdir(path: &str) -> Result<(), Error> {
     let result;
     unsafe {
         result = f_mkdir(path.as_ptr().cast());
@@ -725,8 +745,10 @@ pub fn truncate(file: &mut File) -> Result<(), Error> {
     }
 }
 
-pub fn chmod(path: &CStr, attributes: FileAttributes, mask: FileAttributes) -> Result<(), Error> {
-    let result = unsafe { f_chmod(path.as_ptr(), attributes.as_u8(), mask.as_u8()) };
+pub fn chmod(path: &mut alloc::string::String, attributes: FileAttributes, mask: FileAttributes) -> Result<(), Error> {
+    path.push('\0');
+    let result = unsafe { f_chmod(path.as_ptr().cast(), attributes.as_u8(), mask.as_u8()) };
+    path.pop();
     if result == FRESULT_FR_OK {
         Ok(())
     } else {

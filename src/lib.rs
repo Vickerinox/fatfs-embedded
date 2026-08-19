@@ -711,11 +711,13 @@ pub fn write(file: &mut File, buffer: &[u8]) -> Result<u32, Error> {
     }
 }
 /// Create a directory at the specified path.
-pub fn mkdir(path: &str) -> Result<(), Error> {
+pub fn mkdir(path: &mut alloc::string::String) -> Result<(), Error> {
     let result;
+    path.push('\0');
     unsafe {
         result = f_mkdir(path.as_ptr().cast());
     }
+    path.pop();
     if result == FRESULT_FR_OK {
         return Ok(());
     } else {

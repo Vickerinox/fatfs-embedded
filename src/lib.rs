@@ -725,6 +725,21 @@ pub fn mkdir(path: &mut alloc::string::String) -> Result<(), Error> {
     }
 }
 
+/// Change working directory.
+pub fn chdir(path: &mut alloc::string::String) -> Result<(), Error> {
+    let result;
+    path.push('\0');
+    unsafe {
+        result = f_chdir(path.as_ptr().cast());
+    }
+    path.pop();
+    if result == FRESULT_FR_OK {
+        return Ok(());
+    } else {
+        return Err(Error::try_from(result).unwrap());
+    }
+}
+
 /// Closes the given directory.
 fn closedir(dir: &mut Directory) -> Result<(), Error> {
     let result;

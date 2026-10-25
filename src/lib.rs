@@ -514,7 +514,7 @@ pub mod fatfs {
             self.fs = FATFS::default();
             let result;
             unsafe {
-                result = f_mount(ptr::addr_of_mut!(self.fs), drive.as_ptr(), 1);
+                result = f_mount(ptr::addr_of_mut!(self.fs), drive.as_ptr(), 0);
             }
             if result == FRESULT_FR_OK {
                 return Ok(());
